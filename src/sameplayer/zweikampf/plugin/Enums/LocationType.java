@@ -12,7 +12,6 @@ public enum LocationType {
 
     private Location location;
 
-
     LocationType(Location location) {
         this.location = location;
     }
