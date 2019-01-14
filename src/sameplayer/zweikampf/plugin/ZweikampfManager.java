@@ -1,9 +1,13 @@
 package sameplayer.zweikampf.plugin;
 
 import com.sun.istack.internal.NotNull;
+import com.sun.istack.internal.SAXParseException2;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.Team;
 import sameplayer.zweikampf.plugin.Enums.GameStates;
 
 import javax.annotation.Nonnull;
@@ -15,6 +19,7 @@ public class ZweikampfManager {
 
     private Main plugin;
 
+    private Scoreboard scoreboard;
     private GameStates gameState;
     private int MININUM_PLAYERS = 2;
 
@@ -42,11 +47,15 @@ public class ZweikampfManager {
     }
 
     public boolean isGoing() {
-        return gameState.equals(GameStates.RUN_PICK_KIT);
+        return gameState.equals(GameStates.RUN_FIGHT);
     }
 
     public void addBrawler(Player player) {
         brawlerSet.add(player.getUniqueId());
+    }
+
+    public boolean isBrawler(Player player) {
+        return brawlerSet.contains(player.getUniqueId());
     }
 
     public void addSpectator(Player player) {
@@ -58,18 +67,40 @@ public class ZweikampfManager {
         spectatorSet.clear();
     }
 
+    public Scoreboard getScoreboard() {
+        return scoreboard;
+    }
+
     private void startGame() {
 
         purgeSets();
 
+        scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
+
+        Team spectator = scoreboard.registerNewTeam("spectator");
+        spectator.setColor(ChatColor.GRAY);
+        spectator.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.FOR_OTHER_TEAMS);
+        spectator.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
+        spectator.setAllowFriendlyFire(false);
+        spectator.setCanSeeFriendlyInvisibles(true);
+
+        Team brawler = scoreboard.registerNewTeam("brawler");
+        brawler.setColor(ChatColor.RED);
+        brawler.setAllowFriendlyFire(true);
+        brawler.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.FOR_OWN_TEAM);
+
         for (Player player : Bukkit.getOnlinePlayers()) {
+
+            player.setScoreboard(scoreboard);
 
             if (brawlerSet.size() < MININUM_PLAYERS) {
                 addBrawler(player);
+                brawler.addEntry(player.getName());
                 continue;
             }
 
             addSpectator(player);
+            spectator.addEntry(player.getName());
 
         }
 
@@ -90,21 +121,15 @@ public class ZweikampfManager {
 
     public void startCountdown() {
         new BukkitRunnable() {
-            int countdown = 10;
+            int countdown = 15;
             @Override
             public void run() {
                 if (countdown != 0) {
                     if (countdown == 30 || countdown == 20 || countdown == 10 || countdown <= 5 && countdown > 0) {
-                        //Bukkit.broadcastMessage("§aDie Runde beginnt in §e" + countdown + " Sekunden");
-                    }
-                    for (Player online : Bukkit.getOnlinePlayers()) {
-                        online.setLevel(countdown);
+                        broadcast("§eDie Runde beginnt in §6" + countdown + " Sekunden");
                     }
                     countdown--;
                 }else{
-                    for (Player online : Bukkit.getOnlinePlayers()) {
-                        online.setLevel(0);
-                    }
                     cancel();
                     if (isMinimumReached() && gameState.equals(GameStates.WAIT_COUNTDOWN_FIGHT)) {
                         startGame();

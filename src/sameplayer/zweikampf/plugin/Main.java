@@ -14,20 +14,21 @@ import org.bukkit.plugin.messaging.PluginMessageListener;
 import org.bukkit.scheduler.BukkitRunnable;
 import sameplayer.zweikampf.plugin.Commands.CommandQuit;
 import sameplayer.zweikampf.plugin.Commands.CommandSetup;
+import sameplayer.zweikampf.plugin.Enums.GameStates;
 import sameplayer.zweikampf.plugin.Enums.ServerState;
 import sameplayer.zweikampf.plugin.Listeners.ListenerGameSetup;
 import sameplayer.zweikampf.plugin.Listeners.ListenerInFight;
+import sameplayer.zweikampf.plugin.Listeners.ListenerPlayerJoin;
 import sameplayer.zweikampf.plugin.Listeners.ListenerPlayerWaiting;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.util.HashMap;
 
-public class Main extends JavaPlugin implements PluginMessageListener {
+public class Main extends JavaPlugin {
 
     private static Main m;
-    private static Zweikampf zweikampf;
-    private static ServerState state;
+    private static ZweikampfManager zweikampf;
 
     @Override
     public void onEnable() {
@@ -43,51 +44,22 @@ public class Main extends JavaPlugin implements PluginMessageListener {
         }
 
         m = this;
-        zweikampf = new Zweikampf();
+        zweikampf = new ZweikampfManager();
 
         this.getConfig().options().copyDefaults(true);
         this.saveDefaultConfig();
 
         Bukkit.getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
-        Bukkit.getMessenger().registerIncomingPluginChannel(this, "BungeeCord", this);
+        Bukkit.getMessenger().registerIncomingPluginChannel(this, "BungeeCord", new PluginMessage());
 
         if (!this.getConfig().getBoolean("Abgeschlossen")) {
-            state = ServerState.SETUP;
+            zweikampf.setGameState(GameStates.SERVER_SETUP);
         }else{
-            state = ServerState.WAITING_QUEUE;
+            zweikampf.setGameState(GameStates.WAIT_QUEUE);
         }
 
         registerListeners();
         registerCommands();
-
-        /**new BukkitRunnable() {
-
-            @Override
-            public void run() {
-                System.out.println(getState());
-            }
-        }.runTaskTimer(this, 20, 20);**/
-    }
-
-    @Override
-    public void onDisable() {
-
-        for (Block block : ListenerInFight.blockList) {
-
-            block.setType(Material.AIR);
-
-        }
-
-
-        if (getState().getValue() != 4) {
-
-            for (Player online : Bukkit.getOnlinePlayers()) {
-
-                online.kickPlayer("§aDienst führt einen Neustart durch");
-
-            }
-
-        }
 
     }
 
@@ -97,6 +69,7 @@ public class Main extends JavaPlugin implements PluginMessageListener {
         pluginManager.registerEvents(new ListenerGameSetup(), this);
         pluginManager.registerEvents(new ListenerInFight(), this);
         pluginManager.registerEvents(new ListenerPlayerWaiting(), this);
+        new ListenerPlayerJoin(this);
     }
 
     private void registerCommands() {
@@ -104,44 +77,14 @@ public class Main extends JavaPlugin implements PluginMessageListener {
         this.getCommand("verlassen").setExecutor(new CommandQuit());
     }
 
-    public static ServerState getState() {
-        return state;
-    }
-
-    public static void setState(ServerState state) {
-        Main.state = state;
-    }
-
-    public static Zweikampf getZweikampf() {
+    public static ZweikampfManager getZweikampf() {
         return zweikampf;
     }
 
-    public static Location configToLocation(String path) {
 
-        double x, y, z;
-        float yaw, pitch;
-        String world;
-
-        x = Main.getInstance().getConfig().getDouble(path + ".X");
-        y = Main.getInstance().getConfig().getDouble(path + ".Y");
-        z = Main.getInstance().getConfig().getDouble(path + ".Z");
-
-        yaw = (float) Main.getInstance().getConfig().getDouble(path + ".Gierung");
-        pitch = (float) Main.getInstance().getConfig().getDouble(path + ".Neigung");
-
-        world = Main.getInstance().getConfig().getString(path + ".Welt");
-
-        return new Location(Bukkit.getWorld(world), x, y, z, yaw, pitch);
-
-
-    }
 
     public static Main getInstance() {
         return m;
     }
 
-    @Override
-    public void onPluginMessageReceived(String s, Player player, byte[] bytes) {
-
-    }
 }

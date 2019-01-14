@@ -44,17 +44,6 @@ public class ListenerPlayerWaiting implements Listener {
         }
     }
 
-    @EventHandler
-    public void onMove(PlayerMoveEvent event) {
-        Player player = event.getPlayer();
-        if (Main.getState().equals(ServerState.WAITING_FIGHT)) {
-            if (Main.getZweikampf().contains(player)) {
-                if (event.getFrom().distance(event.getTo()) > 0) {
-                    event.setCancelled(true);
-                }
-            }
-        }
-    }
 
     @EventHandler
     public void onPlayerQuitEvent(PlayerQuitEvent event) {
@@ -166,7 +155,7 @@ public class ListenerPlayerWaiting implements Listener {
         Arrow arrow = (Arrow) event.getEntity();
         Player player = (Player) arrow.getShooter();
 
-        player.setCooldown(Material.BOW, 20);
+        player.setCooldown(Material.BOW, 5);
 
     }
 
@@ -212,117 +201,6 @@ public class ListenerPlayerWaiting implements Listener {
         }else{
 
             event.setCancelled(true);
-
-        }
-
-    }
-
-    @EventHandler
-    public void onPlayerDamageEvent(EntityDamageByEntityEvent event) {
-
-        if (event.getDamager() instanceof Player) {
-            if (event.getEntity() instanceof Player) {
-                if (Main.getState().equals(ServerState.WAITING_QUEUE)) {
-
-                    event.setCancelled(true);
-
-                }else if (Main.getState().equals(ServerState.RUNNING)) {
-
-                    if (event.getEntity() instanceof Player) {
-
-                        Player player = (Player) event.getEntity();
-                        Player damager = (Player) event.getDamager();
-
-                        if (!Main.getZweikampf().contains(player)) {
-
-                            event.setCancelled(true);
-
-                        }else{
-                            if (!Main.getZweikampf().contains(damager)) {
-                                event.setCancelled(true);
-                            }
-                        }
-
-                    }else{
-
-                        event.setCancelled(true);
-
-                    }
-
-                }else{
-
-                    event.setCancelled(true);
-
-                }
-
-            }
-
-        }
-
-    }
-
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-
-        Player player = event.getPlayer();
-
-        player.setGameMode(GameMode.ADVENTURE);
-        player.getInventory().clear();
-        player.setHealth(20);
-        player.setFoodLevel(20);
-        player.setExp(0);
-        player.setLevel(0);
-        player.getInventory().setItem(8, ItemFactory.generateItemStack("§eVerlassen", Material.RED_BED));
-
-        for (PotionEffect effect : player.getActivePotionEffects()) {
-            player.removePotionEffect(effect.getType());
-        }
-
-        if (Main.getState().equals(ServerState.WAITING_QUEUE)) {
-
-            Main.getZweikampf().addPlayer(player);
-            player.teleport(LocationType.WAITING.toLocation());
-
-            if (Bukkit.getOnlinePlayers().size() == 1) {
-
-                player.sendMessage("§aDu hast die Warteschlange betreten!");
-
-            }else if (Bukkit.getOnlinePlayers().size() == 2) {
-
-                Main.setState(ServerState.WAITING_FIGHT);
-
-                Main.getZweikampf().countStart();
-
-                //player.sendMessage("Du hast die Warteschlange betreten!");
-
-            }
-
-            event.setJoinMessage("");
-
-        } else if (Main.getState().equals(ServerState.WAITING_FIGHT)) {
-
-            player.teleport(LocationType.SPECTATOR.toLocation());
-
-
-
-            player.sendMessage("§aEs kämpft §2" + Main.getZweikampf().getPlayers().get(0) + " §ageg. §2" + Main.getZweikampf().getPlayers().get(1));
-
-
-            event.setJoinMessage("§2" + player.getName() + " §aschaut dem Kampf nun zu");
-
-        } else if (Main.getState().equals(ServerState.RUNNING)) {
-
-            player.teleport(LocationType.SPECTATOR.toLocation());
-
-
-
-            player.sendMessage("§aEs kämpft §2" + Main.getZweikampf().getPlayers().get(0) + " §ageg. §2" + Main.getZweikampf().getPlayers().get(1));
-
-            event.setJoinMessage("§2" + player.getName() + " §aschaut dem Kampf nun zu");
-
-        } else if (Main.getState().equals(ServerState.RESTARTING)) {
-
-            player.kickPlayer("Server");
 
         }
 

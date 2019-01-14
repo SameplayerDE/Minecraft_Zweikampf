@@ -11,6 +11,8 @@ public enum GameStates {
     RUN_FIGHT,
 
     REBOOT_COUNTDOWN_LOBBY,
-    REBOOT_SERVER;
+    REBOOT_SERVER,
+
+    SERVER_SETUP;
 
 }
