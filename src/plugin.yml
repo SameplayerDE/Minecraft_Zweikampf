@@ -1,0 +1,11 @@
+main: sameplayer.zweikampf.plugin.Main
+name: Zweikampf
+version: 0.0.1
+author: okbk
+api-version: 1.13
+
+commands:
+  konfiguration:
+    usage: /konfiguration
+  verlassen:
+    usage: /verlassen
