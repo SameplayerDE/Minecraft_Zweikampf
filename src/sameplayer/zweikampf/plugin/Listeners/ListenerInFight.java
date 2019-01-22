@@ -15,9 +15,11 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
+import sameplayer.zweikampf.plugin.Enums.GameStates;
 import sameplayer.zweikampf.plugin.Enums.LocationType;
 import sameplayer.zweikampf.plugin.Enums.ServerState;
 import sameplayer.zweikampf.plugin.Main;
+import sameplayer.zweikampf.plugin.ZweikampfManager;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -27,6 +29,15 @@ import java.util.LinkedList;
 public class ListenerInFight implements Listener {
 
     public static LinkedList<Block> blockList = new LinkedList<>();
+
+    private Main plugin;
+    private ZweikampfManager zweikampf;
+
+    public ListenerInFight(Main plugin) {
+        this.plugin = plugin;
+        this.zweikampf = this.plugin.getZweikampf();
+        Bukkit.getPluginManager().registerEvents(this, plugin);
+    }
 
     @EventHandler
     public void onCraftTableClick(PlayerInteractEvent event) {
@@ -43,33 +54,49 @@ public class ListenerInFight implements Listener {
 
     @EventHandler
     public void onPlayerBlockEvent(BlockPlaceEvent event) {
-        if (Main.getState().equals(ServerState.RUNNING)) {
-            Player player = event.getPlayer();
-            if (Main.getZweikampf().contains(player)) {
-                blockList.add(event.getBlockPlaced());
-                event.setCancelled(false);
-            }else{
-                event.setCancelled(true);
-            }
-        }else if (!Main.getState().equals(ServerState.SETUP)) {
+        if (!zweikampf.isGoing()) {
             event.setCancelled(true);
+            return;
+        }else if (zweikampf.getGameState().equals(GameStates.SERVER_SETUP)) {
+            event.setCancelled(false);
+            return;
         }
+
+        Player player = event.getPlayer();
+
+        if (!zweikampf.isBrawler(player)) {
+            event.setCancelled(true);
+            return;
+        }
+
+        blockList.add(event.getBlockPlaced());
+        event.setCancelled(false);
     }
 
     @EventHandler
-    public void onPlayerBlockBreak(BlockBreakEvent event) {
-        if (Main.getState().equals(ServerState.RUNNING)) {
-            Player player = event.getPlayer();
-            if (Main.getZweikampf().contains(player)) {
-                if (!blockList.contains(event.getBlock())) {
-                    event.setCancelled(true);
-                }
-            }else{
-                event.setCancelled(true);
-            }
-        }else if (!Main.getState().equals(ServerState.SETUP)) {
+    public void onPlayerBlockEvent(BlockBreakEvent event) {
+        if (!zweikampf.isGoing()) {
             event.setCancelled(true);
+            return;
+        }else if (zweikampf.getGameState().equals(GameStates.SERVER_SETUP)) {
+            event.setCancelled(false);
+            return;
         }
+
+        Player player = event.getPlayer();
+
+        if (!zweikampf.isBrawler(player)) {
+            event.setCancelled(true);
+            return;
+        }
+
+        if (!blockList.contains(event.getBlock())) {
+            event.setCancelled(true);
+            return;
+        }
+
+        blockList.remove(event.getBlock());
+        event.setCancelled(false);
     }
 
     @EventHandler
@@ -78,79 +105,76 @@ public class ListenerInFight implements Listener {
         Player player = event.getEntity();
         event.setDeathMessage("");
 
-        if (Main.getState().getValue() == 1) {
+        if (!zweikampf.isGoing()) {
+            return;
+        }
 
-            if (Main.getZweikampf().contains(player)) {
+        if (!zweikampf.isBrawler(player)) {
+            return;
+        }
 
-                event.getDrops().clear();
-                player.setHealth(20);
-               player.getInventory().clear();
-                player.setGameMode(GameMode.ADVENTURE);
-                player.teleport(LocationType.SPECTATOR.toLocation());
-                //Main.getZweikampf().remove(player);
+        event.getDrops().clear();
+        player.setGameMode(GameMode.ADVENTURE);
+        player.teleport(LocationType.SPECTATOR.toLocation());
 
-                Player winner = Main.getZweikampf().getWinnerByLooser(player);
+        Player winner = player.getKiller();
 
-                for (Player online : Bukkit.getOnlinePlayers()) {
+        for (Player online : Bukkit.getOnlinePlayers()) {
 
-                    online.playSound(online.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 10f);
+            online.playSound(online.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 10f);
 
-                    if (online.equals(winner)) {
+            if (online.equals(winner)) {
 
-                        online.sendTitle("§aDu hast", "§adiese Runde für dich entschieden", 20*2, 20*3, 20*2);
+                online.sendTitle("§aDu hast", "§adiese Runde für dich entschieden", 20*2, 20*3, 20*2);
 
-                    }else{
+            }else{
 
-                        online.sendTitle("§a" + winner.getName(), "§ahat gesiegt", 20 * 2, 10 * 3, 10 * 2);
-
-                    }
-
-                }
-
-                Main.setState(ServerState.RESTARTING);
-                Bukkit.broadcastMessage("§aDu wirst in 5 Sekunden zurück zur Eingangshalle gebracht");
-
-                Bukkit.getScheduler().runTaskLater(Main.getInstance(), new Runnable() {
-
-                    @Override
-                    public void run() {
-
-                        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                        DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
-                        try {
-                            dataOutputStream.writeUTF("Connect");
-                            dataOutputStream.writeUTF("eingangshalle");
-                        }catch (Exception e) {
-
-                        }
-                        for (Player online : Bukkit.getOnlinePlayers()) {
-
-                            online.sendPluginMessage(Main.getInstance(), "BungeeCord", outputStream.toByteArray());
-
-                        }
-
-                        Bukkit.getScheduler().runTaskTimer(Main.getInstance(), new Runnable() {
-
-                            @Override
-                            public void run() {
-
-                                if (Bukkit.getOnlinePlayers().size() == 0) {
-
-                                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "reload");
-
-                                }
-
-                            }
-
-                        }, 20*1l, 1l);
-
-                    }
-
-                }, 20*5l);
+                online.sendTitle("§a" + winner.getName(), "§ahat gesiegt", 20 * 2, 10 * 3, 10 * 2);
 
             }
 
         }
+
+        zweikampf.setGameState(GameStates.WAIT_SERVER_REBOOT);
+        Bukkit.broadcastMessage("§aDu wirst in 5 Sekunden zurück zur Eingangshalle gebracht");
+
+        Bukkit.getScheduler().runTaskLater(Main.getInstance(), new Runnable() {
+
+            @Override
+            public void run() {
+
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+                try {
+                    dataOutputStream.writeUTF("Connect");
+                    dataOutputStream.writeUTF("eingangshalle");
+                }catch (Exception e) {
+
+                }
+                for (Player online : Bukkit.getOnlinePlayers()) {
+
+                    online.sendPluginMessage(Main.getInstance(), "BungeeCord", outputStream.toByteArray());
+
+                }
+
+                Bukkit.getScheduler().runTaskTimer(Main.getInstance(), new Runnable() {
+
+                    @Override
+                    public void run() {
+
+                        if (Bukkit.getOnlinePlayers().size() == 0) {
+
+                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "reload");
+
+                        }
+
+                    }
+
+                }, 20*1l, 1l);
+
+            }
+
+        }, 20*5l);
 
     }
 

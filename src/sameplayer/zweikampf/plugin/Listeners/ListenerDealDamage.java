@@ -6,8 +6,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.inventory.ItemStack;
 import sameplayer.zweikampf.plugin.Main;
 import sameplayer.zweikampf.plugin.ZweikampfManager;
+
+import java.util.ArrayList;
 
 public class ListenerDealDamage implements Listener {
 
@@ -47,7 +51,9 @@ public class ListenerDealDamage implements Listener {
 
         if (target.getHealth() - event.getDamage() < 1D) {
             event.setCancelled(true);
+            target.setHealth(20D);
             target.playEffect(EntityEffect.HURT);
+            Bukkit.getPluginManager().callEvent(new PlayerDeathEvent(target, new ArrayList<ItemStack>(), 0, ""));
             return;
         }
 
