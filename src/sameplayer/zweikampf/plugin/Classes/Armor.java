@@ -15,22 +15,22 @@ public class Armor {
     }
 
     public Armor setHelmet(ItemStack helmet) {
-        content[0] = helmet;
+        content[3] = helmet;
         return this;
     }
 
     public Armor setChest(ItemStack chest) {
-        content[1] = chest;
+        content[2] = chest;
         return this;
     }
 
     public Armor setLegs(ItemStack legs) {
-        content[2] = legs;
+        content[1] = legs;
         return this;
     }
 
     public Armor setBoots(ItemStack boots) {
-        content[3] = boots;
+        content[0] = boots;
         return this;
     }
 

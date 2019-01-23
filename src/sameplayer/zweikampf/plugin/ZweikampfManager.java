@@ -5,10 +5,13 @@ import com.sun.istack.internal.SAXParseException2;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 import sameplayer.zweikampf.plugin.Enums.GameStates;
+import sameplayer.zweikampf.plugin.Enums.Kit;
+import sameplayer.zweikampf.plugin.Enums.LocationType;
 
 import javax.annotation.Nonnull;
 import java.util.HashSet;
@@ -20,13 +23,14 @@ public class ZweikampfManager {
     private Main plugin;
 
     private Scoreboard scoreboard;
-    private GameStates gameState;
+    private GameStates gameState = GameStates.REBOOT_SERVER;
     private int MININUM_PLAYERS = 2;
 
     private HashSet<UUID> brawlerSet;
     private HashSet<UUID> spectatorSet;
 
-    public ZweikampfManager() {
+    public ZweikampfManager(Main plugin) {
+        this.plugin = plugin;
         brawlerSet = new HashSet<>();
         spectatorSet = new HashSet<>();
     }
@@ -110,19 +114,40 @@ public class ZweikampfManager {
         brawler.setAllowFriendlyFire(true);
         brawler.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.FOR_OWN_TEAM);
 
+        int loopCount = 0;
+
         for (Player player : Bukkit.getOnlinePlayers()) {
 
             player.setScoreboard(scoreboard);
 
             if (brawlerSet.size() < MININUM_PLAYERS) {
+                if (loopCount == 0) {
+                    player.teleport(LocationType.PLAYER_ONE.toLocation());
+                }else if (loopCount == 1) {
+                    player.teleport(LocationType.PLAYER_TWO.toLocation());
+                }
                 addBrawler(player);
                 brawler.addEntry(player.getName());
                 continue;
             }
 
+
             addSpectator(player);
             spectator.addEntry(player.getName());
 
+            loopCount++;
+
+        }
+
+        setGameState(GameStates.RUN_PICK_KIT);
+
+        for (UUID uuid : brawlerSet) {
+            Inventory kits = Bukkit.createInventory(null, 9*3, "Kits");
+            for (Kit kit : Kit.values()) {
+                kits.addItem(kit.toItemStack());
+            }
+            Player player = Bukkit.getPlayer(uuid);
+            player.openInventory(kits);
         }
 
     }
@@ -151,16 +176,16 @@ public class ZweikampfManager {
                     }
                     countdown--;
                 }else{
-                    cancel();
                     if (isMinimumReached() && gameState.equals(GameStates.WAIT_COUNTDOWN_FIGHT)) {
                         startGame();
                     }else{
                         setGameState(GameStates.WAIT_QUEUE);
                     }
+                    cancel();
                 }
 
             }
-        }.runTaskTimer(plugin, 20*2l, 20l);
+        }.runTaskTimer(plugin, 20l*2l, 20l);
     }
 
     private enum GameEntity {

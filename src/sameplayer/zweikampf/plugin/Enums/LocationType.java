@@ -24,14 +24,14 @@ public enum LocationType {
         float yaw, pitch;
         String world;
 
-        x = plugin.getConfig().getDouble(path + ".X");
-        y = plugin.getConfig().getDouble(path + ".Y");
-        z = plugin.getConfig().getDouble(path + ".Z");
+        x =  Main.getInstance().getConfig().getDouble(path + ".X");
+        y =  Main.getInstance().getConfig().getDouble(path + ".Y");
+        z =  Main.getInstance().getConfig().getDouble(path + ".Z");
 
-        yaw = (float) plugin.getConfig().getDouble(path + ".Gierung");
-        pitch = (float) plugin.getConfig().getDouble(path + ".Neigung");
+        yaw = (float)  Main.getInstance().getConfig().getDouble(path + ".Gierung");
+        pitch = (float)  Main.getInstance().getConfig().getDouble(path + ".Neigung");
 
-        world = plugin.getConfig().getString(path + ".Welt");
+        world =  Main.getInstance().getConfig().getString(path + ".Welt");
 
         return new Location(Bukkit.getWorld(world), x, y, z, yaw, pitch);
 

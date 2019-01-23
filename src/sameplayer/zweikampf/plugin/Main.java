@@ -16,10 +16,7 @@ import sameplayer.zweikampf.plugin.Commands.CommandQuit;
 import sameplayer.zweikampf.plugin.Commands.CommandSetup;
 import sameplayer.zweikampf.plugin.Enums.GameStates;
 import sameplayer.zweikampf.plugin.Enums.ServerState;
-import sameplayer.zweikampf.plugin.Listeners.ListenerGameSetup;
-import sameplayer.zweikampf.plugin.Listeners.ListenerInFight;
-import sameplayer.zweikampf.plugin.Listeners.ListenerPlayerJoin;
-import sameplayer.zweikampf.plugin.Listeners.ListenerPlayerWaiting;
+import sameplayer.zweikampf.plugin.Listeners.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -44,7 +41,7 @@ public class Main extends JavaPlugin {
         }
 
         m = this;
-        zweikampf = new ZweikampfManager();
+        zweikampf = new ZweikampfManager(this);
 
         this.getConfig().options().copyDefaults(true);
         this.saveDefaultConfig();
@@ -68,6 +65,7 @@ public class Main extends JavaPlugin {
         new ListenerInFight(this);
         new ListenerPlayerWaiting(this);
         new ListenerPlayerJoin(this);
+        new ListenerPickKit(this);
     }
 
     private void registerCommands() {

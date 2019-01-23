@@ -158,7 +158,7 @@ public class ListenerPlayerWaiting implements Listener {
         Arrow arrow = (Arrow) event.getEntity();
         Player player = (Player) arrow.getShooter();
 
-        player.setCooldown(Material.BOW, 5);
+        player.setCooldown(Material.BOW, 10);
 
     }
 

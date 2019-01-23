@@ -54,10 +54,12 @@ public class ListenerInFight implements Listener {
 
     @EventHandler
     public void onPlayerBlockEvent(BlockPlaceEvent event) {
-        if (!zweikampf.isGoing()) {
+        if (!zweikampf.isGoing() && !zweikampf.getGameState().equals(GameStates.SERVER_SETUP)) {
             event.setCancelled(true);
             return;
-        }else if (zweikampf.getGameState().equals(GameStates.SERVER_SETUP)) {
+        }
+
+        if (zweikampf.getGameState().equals(GameStates.SERVER_SETUP)) {
             event.setCancelled(false);
             return;
         }
@@ -75,10 +77,12 @@ public class ListenerInFight implements Listener {
 
     @EventHandler
     public void onPlayerBlockEvent(BlockBreakEvent event) {
-        if (!zweikampf.isGoing()) {
+        if (!zweikampf.isGoing() && !zweikampf.getGameState().equals(GameStates.SERVER_SETUP)) {
             event.setCancelled(true);
             return;
-        }else if (zweikampf.getGameState().equals(GameStates.SERVER_SETUP)) {
+        }
+
+        if (zweikampf.getGameState().equals(GameStates.SERVER_SETUP)) {
             event.setCancelled(false);
             return;
         }

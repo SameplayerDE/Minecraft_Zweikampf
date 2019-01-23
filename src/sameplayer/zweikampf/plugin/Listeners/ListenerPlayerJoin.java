@@ -47,6 +47,7 @@ public class ListenerPlayerJoin implements Listener {
             player.teleport(LocationType.WAITING.toLocation());
             if (zweikampf.isReady()) {
                 zweikampf.startCountdown();
+                zweikampf.setGameState(GameStates.WAIT_COUNTDOWN_FIGHT);
             }
             return;
         }
