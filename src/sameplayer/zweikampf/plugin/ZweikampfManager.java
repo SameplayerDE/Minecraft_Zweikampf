@@ -26,6 +26,11 @@ public class ZweikampfManager {
     private HashSet<UUID> brawlerSet;
     private HashSet<UUID> spectatorSet;
 
+    public ZweikampfManager() {
+        brawlerSet = new HashSet<>();
+        spectatorSet = new HashSet<>();
+    }
+
     public boolean isReady() {
         return gameState.equals(GameStates.WAIT_QUEUE) && isMinimumReached();
     }
@@ -50,6 +55,14 @@ public class ZweikampfManager {
         return gameState.equals(GameStates.RUN_FIGHT);
     }
 
+    public HashSet<UUID> getBrawlerSet() {
+        return brawlerSet;
+    }
+
+    public HashSet<UUID> getSpectatorSet() {
+        return spectatorSet;
+    }
+
     public void addBrawler(Player player) {
         brawlerSet.add(player.getUniqueId());
     }
@@ -65,6 +78,14 @@ public class ZweikampfManager {
     public void purgeSets() {
         brawlerSet.clear();
         spectatorSet.clear();
+    }
+
+    public void purgeBrawler(Player player) {
+        brawlerSet.remove(player.getUniqueId());
+    }
+
+    public void purgeSpectator(Player player) {
+        spectatorSet.remove(player.getUniqueId());
     }
 
     public Scoreboard getScoreboard() {

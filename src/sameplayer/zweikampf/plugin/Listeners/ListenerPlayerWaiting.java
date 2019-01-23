@@ -16,9 +16,11 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import sameplayer.zweikampf.plugin.Enums.GameStates;
 import sameplayer.zweikampf.plugin.Enums.LocationType;
 import sameplayer.zweikampf.plugin.Enums.ServerState;
 import sameplayer.zweikampf.plugin.Main;
+import sameplayer.zweikampf.plugin.ZweikampfManager;
 import zame.itemfactory.api.ItemFactory;
 
 import java.io.ByteArrayOutputStream;
@@ -27,6 +29,15 @@ import java.io.DataOutputStream;
 public class ListenerPlayerWaiting implements Listener {
 
     public static BukkitTask waitingFightTimer;
+
+    private Main plugin;
+    private ZweikampfManager zweikampf;
+
+    public ListenerPlayerWaiting(Main plugin) {
+        this.plugin = plugin;
+        this.zweikampf = this.plugin.getZweikampf();
+        Bukkit.getPluginManager().registerEvents(this, plugin);
+    }
 
     @EventHandler
     public void onBedClick(PlayerInteractEvent event) {
@@ -50,82 +61,74 @@ public class ListenerPlayerWaiting implements Listener {
 
         Player player = event.getPlayer();
 
-        if (Main.getState().equals(ServerState.WAITING_QUEUE)) {
+        if (!zweikampf.isGoing()) {
+            zweikampf.purgeSpectator(player);
+            return;
+        }
 
-            if (Main.getZweikampf().contains(player)) {
+        zweikampf.purgeBrawler(player);
 
-                Main.getZweikampf().remove(player);
+        Player winner = Bukkit.getPlayer(zweikampf.getBrawlerSet().iterator().next());
+
+        for (Player online : Bukkit.getOnlinePlayers()) {
+
+            online.playSound(online.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 10f);
+
+            if (online.equals(winner)) {
+
+                online.sendTitle("Du hast", "diese Runde für dich entschieden", 20*2, 20*3, 20*2);
+
+            }else{
+
+                online.sendTitle(winner.getName(), "hat gesiegt", 20 * 2, 10 * 3, 10 * 2);
 
             }
 
-        } else if (Main.getState().equals(ServerState.RUNNING) || Main.getState().equals(ServerState.WAITING_FIGHT)) {
+        }
 
-            if (Main.getZweikampf().contains(player)) {
+        zweikampf.setGameState(GameStates.REBOOT_COUNTDOWN_LOBBY);
 
-                Player winner = Main.getZweikampf().getWinnerByLooser(player);
+        Bukkit.broadcastMessage("Du wirst in 15 Sekunden zurück zur Eingangshalle gebracht");
 
+        Bukkit.getScheduler().runTaskLater(Main.getInstance(), new Runnable() {
+
+            @Override
+            public void run() {
+
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+                try {
+                    dataOutputStream.writeUTF("Connect");
+                    dataOutputStream.writeUTF("eingangshalle");
+                }catch (Exception e) {
+
+                }
                 for (Player online : Bukkit.getOnlinePlayers()) {
 
-                    online.playSound(online.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 10f);
-
-                    if (online.equals(winner)) {
-
-                        online.sendTitle("Du hast", "diese Runde für dich entschieden", 20*2, 20*3, 20*2);
-
-                    }else{
-
-                        online.sendTitle(winner.getName(), "hat gesiegt", 20 * 2, 10 * 3, 10 * 2);
-
-                    }
+                    online.sendPluginMessage(Main.getInstance(), "BungeeCord", outputStream.toByteArray());
 
                 }
 
-                Main.setState(ServerState.RESTARTING);
-                Bukkit.broadcastMessage("Du wirst in 15 Sekunden zurück zur Eingangshalle gebracht");
-
-                Bukkit.getScheduler().runTaskLater(Main.getInstance(), new Runnable() {
+                Bukkit.getScheduler().runTaskTimer(Main.getInstance(), new Runnable() {
 
                     @Override
                     public void run() {
 
-                        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                        DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
-                        try {
-                            dataOutputStream.writeUTF("Connect");
-                            dataOutputStream.writeUTF("eingangshalle");
-                        }catch (Exception e) {
+                        if (Bukkit.getOnlinePlayers().size() == 0) {
+
+                            //Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "restart");
 
                         }
-                        for (Player online : Bukkit.getOnlinePlayers()) {
-
-                            online.sendPluginMessage(Main.getInstance(), "BungeeCord", outputStream.toByteArray());
-
-                        }
-
-                        Bukkit.getScheduler().runTaskTimer(Main.getInstance(), new Runnable() {
-
-                            @Override
-                            public void run() {
-
-                                if (Bukkit.getOnlinePlayers().size() == 0) {
-
-                                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "restart");
-
-                                }
-
-                            }
-
-                        }, 20*1l, 1l);
 
                     }
 
-                }, 20*15l);
+                }, 20*1l, 1l);
 
             }
 
-            Main.getZweikampf().remove(player);
+        }, 20*15l);
 
-        }
+        zweikampf.purgeSets();
 
     }
 
@@ -134,7 +137,7 @@ public class ListenerPlayerWaiting implements Listener {
 
         Player player = event.getPlayer();
 
-        if (!Main.getState().equals(ServerState.SETUP)) {
+        if (!zweikampf.getGameState().equals(GameStates.SERVER_SETUP)) {
             event.setCancelled(true);
         }
 
@@ -162,46 +165,21 @@ public class ListenerPlayerWaiting implements Listener {
     @EventHandler
     public void onPlayerDamageEvent(EntityDamageEvent event) {
 
-        if (Main.getState().equals(ServerState.WAITING_QUEUE)) {
-
+        if (!zweikampf.isGoing()) {
             event.setCancelled(true);
+            return;
+        }
 
-        }else if (Main.getState().equals(ServerState.RUNNING)) {
-
-            if (event.getEntity() instanceof Player) {
-
-                Player player = (Player) event.getEntity();
-
-                if (!Main.getZweikampf().contains(player)) {
-
-                    event.setCancelled(true);
-
-                }
-
-                if (player.isBlocking()) {
-
-                    player.getInventory().getItemInOffHand().setAmount(0);
-
-                    new BukkitRunnable() {
-
-                        @Override
-                        public void run() {
-                            player.getInventory().setItemInOffHand(ItemFactory.generateItemStack("§eSchild", Material.SHIELD));
-                        }
-                    }.runTaskLater(Main.getInstance(), 20l*5);
-
-                }
-
-            }else{
-
-                event.setCancelled(true);
-
-            }
-
-        }else{
-
+        if (!(event.getEntity() instanceof Player)) {
             event.setCancelled(true);
+            return;
+        }
 
+        Player target = (Player) event.getEntity();
+
+        if (!zweikampf.isBrawler(target)) {
+            event.setCancelled(true);
+            return;
         }
 
     }
