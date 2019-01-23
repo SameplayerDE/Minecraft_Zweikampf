@@ -64,16 +64,14 @@ public class Main extends JavaPlugin {
     }
 
     private void registerListeners() {
-        PluginManager pluginManager = Bukkit.getPluginManager();
-
-        pluginManager.registerEvents(new ListenerGameSetup(), this);
-        pluginManager.registerEvents(new ListenerInFight(), this);
-        pluginManager.registerEvents(new ListenerPlayerWaiting(), this);
+        new ListenerGameSetup(this);
+        new ListenerInFight(this);
+        new ListenerPlayerWaiting(this);
         new ListenerPlayerJoin(this);
     }
 
     private void registerCommands() {
-        this.getCommand("konfiguration").setExecutor(new CommandSetup());
+        new CommandSetup(this);
         this.getCommand("verlassen").setExecutor(new CommandQuit());
     }
 

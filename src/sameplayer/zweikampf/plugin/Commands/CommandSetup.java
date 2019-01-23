@@ -6,8 +6,10 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
+import sameplayer.zweikampf.plugin.Enums.GameStates;
 import sameplayer.zweikampf.plugin.Enums.ServerState;
 import sameplayer.zweikampf.plugin.Main;
+import sameplayer.zweikampf.plugin.ZweikampfManager;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,6 +18,15 @@ import java.util.UUID;
 public class CommandSetup implements TabExecutor {
 
     private LinkedHashMap<UUID, Integer> setup = new LinkedHashMap<>();
+
+    private Main plugin;
+    private ZweikampfManager zweikampf;
+
+    public CommandSetup(Main plugin) {
+        this.plugin = plugin;
+        this.zweikampf = this.plugin.getZweikampf();
+        this.plugin.getCommand("konfiguration").setExecutor(this);
+    }
 
     @Override
     public boolean onCommand(CommandSender commandSender, Command command, String s, String[] strings) {
@@ -32,8 +43,8 @@ public class CommandSetup implements TabExecutor {
 
                         setup.put(player.getUniqueId(), 0);
 
-                        if (!Main.getState().equals(ServerState.SETUP)) {
-                            Main.setState(ServerState.SETUP);
+                        if (!zweikampf.getGameState().equals(GameStates.SERVER_SETUP)) {
+                            zweikampf.setGameState(GameStates.SERVER_SETUP);
                             player.setGameMode(GameMode.CREATIVE);
                             for (Player online : Bukkit.getOnlinePlayers()) {
                                 if (!online.hasPermission("zweikampf.konfiguration")) {
@@ -119,7 +130,7 @@ public class CommandSetup implements TabExecutor {
                             player.sendMessage("5 Schritt abgschlossen!");
                             Main.getInstance().getConfig().set("Abgeschlossen", true);
                             Main.getInstance().saveConfig();
-                            Main.setState(ServerState.WAITING_QUEUE);
+                            zweikampf.setGameState(GameStates.WAIT_QUEUE);
                             setup.remove(player.getUniqueId());
                             return true;
 

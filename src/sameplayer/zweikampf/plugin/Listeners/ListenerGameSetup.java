@@ -12,9 +12,20 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.scheduler.BukkitRunnable;
+import sameplayer.zweikampf.plugin.Enums.GameStates;
 import sameplayer.zweikampf.plugin.Main;
+import sameplayer.zweikampf.plugin.ZweikampfManager;
 
 public class ListenerGameSetup implements Listener {
+
+    private Main plugin;
+    private ZweikampfManager zweikampf;
+
+    public ListenerGameSetup(Main plugin) {
+        this.plugin = plugin;
+        this.zweikampf = this.plugin.getZweikampf();
+        Bukkit.getPluginManager().registerEvents(this, plugin);
+    }
 
     @EventHandler
     public void onPlayerLogin(PlayerLoginEvent event) {
@@ -27,7 +38,7 @@ public class ListenerGameSetup implements Listener {
          player.sendPluginMessage(Main.getInstance(), "BungeeCord", serverIP.toByteArray());
          **/
 
-        if (Main.getState().getValue() == 4) {
+        if (zweikampf.getGameState().equals(GameStates.SERVER_SETUP)) {
 
             if (player.hasPermission("zweikampf.konfiguration")) {
 

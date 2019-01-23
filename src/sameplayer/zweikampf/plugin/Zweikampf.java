@@ -120,7 +120,7 @@ public class Zweikampf {
 
     public void start() {
         waitingFightTimer.cancel();
-        Main.setState(ServerState.RUNNING);
+
     }
 
 }
